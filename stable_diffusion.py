@@ -30,7 +30,7 @@ def callback(pipe, step_index, timestep, callback_kwargs):
             latents / pipe.vae.config.scaling_factor, return_dict=False)[0]
         images = pipe.image_processor.postprocess(images, output_type='pil')
 
-        fig, axs = plt.subplots(1, len(images), figsize=(30, 30))
+        fig, axs = plt.subplots(1, len(images), figsize=(15, 15))
         fig.suptitle(f'Images generated at step_index = {step_index}, timestep = {timestep}')
 
         for i in range(len(images)):
@@ -42,7 +42,7 @@ def callback(pipe, step_index, timestep, callback_kwargs):
 
         plt.savefig(f'{parameters['out_path']}/step_index_{step_index}.png')
         
-        print(f"callback_kwargs={callback_kwargs}")
+        #print(f"callback_kwargs={callback_kwargs}")
 
     return callback_kwargs
 
@@ -98,12 +98,11 @@ def get_parameters():
     if not parameters['guidance_scale']:
         parameters['guidance_scale'] = default_guidance_scale
     parameters['guidance_scale'] = float(parameters['guidance_scale'])
-    parameters['out_path']=""
 
 def mk_out_dir():
     global parameters
     
-    if not parameters['out_path'] or os.path.exists(parameters['out_path']):
+    if 'out_path' not in parameters or not parameters['out_path'] or os.path.exists(parameters['out_path']):
         parameters['out_path'] = f"./{int(time.time())}"
     os.makedirs(parameters['out_path'])
 
@@ -121,6 +120,8 @@ def load_model():
         pipeline.scheduler.config)
 
     pipeline = pipeline.to(device)
+    
+    return pipeline
 
 
 def main():
@@ -132,7 +133,7 @@ def main():
     with open(f'{parameters['out_path']}/parameters.json', 'w') as params_file: 
         params_file.write(json.dumps(parameters))
     
-    load_model()
+    pipeline = load_model()
 
     print(f"Generating images in {parameters['out_path']} with parameters: {parameters}")
     
