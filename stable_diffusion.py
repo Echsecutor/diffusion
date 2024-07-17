@@ -41,6 +41,7 @@ def callback(pipe, step_index, timestep, callback_kwargs):
         #plt.show()
 
         plt.savefig(f'{parameters['out_path']}/step_index_{step_index}.png')
+        plt.close()
         
         #print(f"callback_kwargs={callback_kwargs}")
 
