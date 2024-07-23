@@ -15,7 +15,7 @@ default_guidance_scale = 12
 default_num_inference_steps = 20
 default_negative_prompt= "ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurry, bad anatomy, blurred, watermark, grainy, signature, cut off, draft"
 
-device = "cpu"  # Expected one of cpu, cuda, ipu, xpu, mkldnn, opengl, opencl, ideep, hip, ve, fpga, ort, xla, lazy, vulkan, mps, meta, hpu, mtia, privateuseone device type at start of device string: rocm
+default_device = "cpu" 
 
 parameters=dict()
 
@@ -40,7 +40,7 @@ def callback(pipe, step_index, timestep, callback_kwargs):
         plt.tight_layout()
         #plt.show()
 
-        plt.savefig(f'{parameters['out_path']}/step_index_{step_index}.png')
+        plt.savefig(f'{parameters["out_path"]}/step_index_{step_index}.png')
         plt.close()
         
         #print(f"callback_kwargs={callback_kwargs}")
@@ -50,7 +50,7 @@ def callback(pipe, step_index, timestep, callback_kwargs):
 def parameters_to_pipeline_args(parameters):
     return {'num_inference_steps': parameters['num_inference_steps'],
             'guidance_scale': parameters['guidance_scale'],
-            'generator': [torch.Generator(device).manual_seed(i) for i in parameters['seeds']],
+            'generator': [torch.Generator(parameters['device']).manual_seed(i) for i in parameters['seeds']],
             'negative_prompt': len(parameters['seeds']) * [parameters['negative_prompt']],
             'prompt': len(parameters['seeds']) * [parameters['prompt']]
             }
@@ -68,6 +68,10 @@ def get_parameters():
             parameters = json.load(parameter_file)
         return
     
+    parameters['device'] = input(f"device (cpu, cuda, ... see torch docs) [cpu]: ")
+    if not parameters['device']:
+        parameters['device']=default_device
+
     parameters['model_id'] = input(f"model [{default_model_id}]: ")
     if not parameters['model_id']:
         parameters['model_id'] = default_model_id
@@ -120,7 +124,7 @@ def load_model():
     pipeline.scheduler = DPMSolverMultistepScheduler.from_config(
         pipeline.scheduler.config)
 
-    pipeline = pipeline.to(device)
+    pipeline = pipeline.to(parameters['device'])
     
     return pipeline
 
@@ -131,7 +135,7 @@ def main():
     
     mk_out_dir()
     
-    with open(f'{parameters['out_path']}/parameters.json', 'w') as params_file: 
+    with open('{}/parameters.json'.format(parameters.get('out_path')), 'w') as params_file: 
         params_file.write(json.dumps(parameters))
     
     pipeline = load_model()
